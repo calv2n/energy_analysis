@@ -11,7 +11,7 @@ bibliography: references.bib
 
 ## Motivation
 
-This is a test to see if the commit will impact quartopub
+This This is a test to see if the commit will impact quartopub
 
 A comparison between XGBoost and AutoRegression in future predictions
 
