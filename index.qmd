@@ -11,6 +11,8 @@ bibliography: references.bib
 
 ## Motivation
 
+This is a test to see if the commit will impact quartopub
+
 A comparison between XGBoost and AutoRegression in future predictions
 
 ## Dataset
@@ -33,10 +35,4 @@ import xgboost as xgb
 # energy_df['Datetime'] = pd.to_datetime(energy_df['Datetime'])
 # energy = energy_df['PJME_MW']
 # sns.lineplot(energy_df, x='Datetime', y='PJME_MW')
-```
-
-a change
-
-```{python}
-
 ```
