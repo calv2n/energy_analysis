@@ -1,14 +1,14 @@
 ## Project: Power Consumption in the Eastern United States
 
-This project explores the performance of XGBoost vs AutoRegression in future predictions of power consumption in the Eastern United States.
+This project explores the performance of XGBoost vs AutoRegression in future predictions of power consumption in the Eastern United States and Average Monthly Sunspot counts.
 
 ### Website
 
-[https://calvin.quarto.pub/energy_analysis/](https://calvin.quarto.pub/energy_analysis/)
+[https://calvin.quarto.pub/energy_analysis/](https://calvin.quarto.pub/ts-analysis/)
 
 ### GitHub
 
-[https://github.com/calv2n/energy_analysis/](https://github.com/calv2n/energy_analysis/)
+[https://github.com/calv2n/energy_analysis/](https://github.com/calv2n/ts_analysis/)
 
 ### Dataset
 
