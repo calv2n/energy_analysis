@@ -1,0 +1,12 @@
+name: ar_xgb_project
+channels:
+  - conda-forge
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+dependencies:
+  - pip=25.3
+  - statsmodels
+  - matplotlib
+  - xgboost
+  - seaborn
+prefix: /Users/calvin/miniconda3/envs/ar_xgb_project

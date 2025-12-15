@@ -11,7 +11,9 @@ bibliography: references.bib
 
 ## Motivation
 
-A comparison between XGBoost and AutoRegression in future predictions
+This comparison between XGBoost and AutoRegression in future predictions of power consumption in the Eastern United States is motivated by curiosity about the relative performance of these two models given non-linear relationships and interactions between features. 
+
+Historically, XGBoost has been used in a variety of applications, with time series forecasting not being an exception. However, AutoRegression is a more traditional approach to time series forecasting, and might outperform XGBoost in a setting with only one source of information: the past values of the time series.
 
 ## Dataset
 
@@ -114,7 +116,25 @@ class xgb_model:
 ...
 ```
 
-Additionally, we will have to adjust AR model to use the true $y$ values before $y_t$ instead of their own predictions. We will create a new class `ar_model` (available in ar_model.py), which impliments the up-to-date AR model.
+Additionally, we will have to adjust AR model to use the true $y$ values before $y_t$ instead of their own predictions. We will create a new class `ar_model` (available in ar_model.py), which impliments the up-to-date AR model:
+
+```python
+class ar_model:
+...
+    def predict(self, full_series, train_size):
+        test_size = len(full_series) - train_size
+        data_block = full_series[train_size - self.p:]
+        X_test = np.array([
+            data_block[i : i + self.p][::-1] 
+            for i in range(test_size)
+        ])
+        params = self.md.params
+        intercept = params[0]
+        coeffs = params[1:]
+        preds = intercept + np.dot(X_test, coeffs)
+        return preds
+...
+```
 
 We then train this up-to-date XGBoost model and the AR model on $p$ value candidates from 1 to 40 and compare which has the lowest MSE on the test set. The results:
 
@@ -129,7 +149,7 @@ results_uptodate = find_best_model_uptodate(
 )
 ```
 
-With the up-to-date approach, both models have access to the true $y$ values up to $y_{t-1}$ when predicting $y_t$. This is a more realistic scenario when predictions are made one step at a time with updated information. We can see here that XGBoost really shines. While the AR model performs well 
+With the up-to-date approach, both models have access to the true $y$ values up to $y_{t-1}$ when predicting $y_t$. This is a more realistic scenario when predictions are made one step at a time with updated information. We can see here that XGBoost really shines. While the AR model performs well, XGBoost slightly outperforms it.
 
 Let's visualize the results:
 
@@ -137,4 +157,10 @@ Let's visualize the results:
 plot_best_uptodate(results_uptodate)
 ```
 
-Interestingly: we see a more comparable story between the two models in this setting. However, the XGBoost model still outperforms the AR model. Although
+Interestingly: we see a more comparable story between the two models in this setting. However, the XGBoost model still outperforms the AR model.
+
+## Conclusion
+
+In this project, we compared the performance of XGBoost and AR models on a time series dataset of PJME hourly electricity usage. We found that XGBoost outperforms AR models in both the rolling and up-to-date settings, with the up-to-date setting showing a more comparable story between the two models. 
+
+Overall, XGBoost provides a more accurate and robust prediction method for this time series data, likely due to its ability to capture non-linear relationships and the interactions between time points. 
