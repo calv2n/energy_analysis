@@ -16,4 +16,23 @@ DATASETS = [
         }
     }
 ]
-
+HYPERPARAMETERS = [ # Gathered from cross_validation.py
+    {
+        'n_estimators' : 100, 
+        'learning_rate': 0.1, 
+        'max_depth': 6, 
+        'subsample': 0.8, 
+        'colsample_bytree': 0.8, 
+        'random_state': 42, 
+        'verbosity': 0
+    }, # PJME
+    {
+        'n_estimators' : 100, 
+        'learning_rate': 0.1, 
+        'max_depth': 6, 
+        'subsample': 0.8, 
+        'colsample_bytree': 0.8, 
+        'random_state': 42, 
+        'verbosity': 0
+    } # SUNSPOTS 
+]

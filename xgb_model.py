@@ -2,15 +2,9 @@ import xgboost as xgb
 import numpy as np
 
 class xgb_model:
-    def __init__(self, p):
+    def __init__(self, p, hyperparams):
         self.md = xgb.XGBRegressor(
-            n_estimators=100,
-            learning_rate=0.1,
-            max_depth=6,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            random_state=42,
-            verbosity=0
+            **hyperparams
         )
         self.p = p
     
@@ -19,6 +13,15 @@ class xgb_model:
         self.md.fit(X_train, y_train)
     
     def _create_lag_features(self, data, n_lags):
+        """Create lag features for time series data.
+        
+        Args:
+            data: Time series data
+            n_lags: Number of lags to create
+            
+        Returns:
+            Tuple of (X, y) where X contains lag features and y contains target values
+        """
         X = np.array([
             data[i - n_lags:i].values for i in range(n_lags, len(data))
         ])
@@ -26,9 +29,14 @@ class xgb_model:
         return X, y
 
     def forecast(self, train, n_forecast):
-        """
-        Rolling predictions: similar to how forecast works 
-        in autoregressive model.
+        """Generate rolling predictions using only training data and previous predictions.
+        
+        Args:
+            train: Training data
+            n_forecast: Number of steps to forecast
+            
+        Returns:
+            Array of predicted values
         """
         preds = np.zeros(n_forecast)
         last_values = train[-self.p:].values.copy()
@@ -44,9 +52,14 @@ class xgb_model:
         return preds
 
     def predict(self, full_series, train_size):
-        """
-        Up-to-date approach: uses true y values before y_t 
-        instead of rolling predictions.
+        """Generate predictions using true values (up-to-date approach).
+        
+        Args:
+            full_series: Complete time series data
+            train_size: Size of training set (start index for predictions)
+            
+        Returns:
+            Array of predicted values
         """
         X_test, _ = self._create_lag_features(full_series[train_size - self.p:], self.p)
         return self.md.predict(X_test)

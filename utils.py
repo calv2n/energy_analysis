@@ -25,19 +25,42 @@ def load_dataset(dataset, parser=None):
     return df
 
 def calculate_metrics(test, preds):
+    """Calculate evaluation metrics for predictions.
+    
+    Args:
+        test: True values
+        preds: Predicted values
+        
+    Returns:
+        Tuple of (MSE, MAE, RMSE, R2)
+    """
     mse = mean_squared_error(test, preds)
     mae = mean_absolute_error(test, preds)
     rmse = np.sqrt(mse)
     r2 = r2_score(test, preds)
     return mse, mae, rmse, r2
 
-def get_results_xgb_rolling(dataset, target, p, prop_test=0.1, verbose=True, parser=None):
+def get_results_xgb_rolling(dataset, target, p, prop_test=0.1, verbose=True, parser=None, hyperparameters={}):
+    """Run rolling XGBoost model evaluation.
+    
+    Args:
+        dataset: Name of dataset
+        target: Target column name
+        p: Number of lag features
+        prop_test: Proportion of data to use for testing
+        verbose: Whether to print results
+        parser: Optional CSV parser settings
+        hyperparameters: XGBoost hyperparameters
+        
+    Returns:
+        Dictionary containing test data, predictions, and metrics
+    """
     df = load_dataset(dataset, parser)
     ts = df[target]
     train = ts[:int(len(ts) * (1 - prop_test))]
     test = ts[int(len(ts) * (1 - prop_test)):]
     
-    xgb_md = xgb_model(p=p)
+    xgb_md = xgb_model(p=p, hyperparams=hyperparameters)
     xgb_md.train_model(train=train)
     test_hat = xgb_md.forecast(train=train, n_forecast=test.size)
     mse_xgb, mae_xgb, rmse_xgb, r2_xgb = calculate_metrics(test=test, preds=test_hat)
@@ -59,7 +82,15 @@ def get_results_xgb_rolling(dataset, target, p, prop_test=0.1, verbose=True, par
     }
 
 def plot_best_rolling(results, dataset_name='Dataset'):
-    """Plots the forecast for the best XGB and AR models (rolling approach)"""
+    """Plots the forecast for the best XGB and AR models (rolling approach)
+    
+    Args:
+        results: Results from find_best_model_rolling
+        dataset_name: Name of the dataset for the plot title
+    
+    Returns:
+        None
+    """
     plt.close()
     test = results['XGB']['metrics'][results['XGB']['best_p']]['test']
     preds_xgb = results['XGB']['metrics'][results['XGB']['best_p']]['predictions']
@@ -81,6 +112,19 @@ def plot_best_rolling(results, dataset_name='Dataset'):
     plt.savefig(f'figs/plot-rolling-{dataset_name}.png')
 
 def get_results_AR_rolling(dataset, target, p, prop_test=0.1, verbose=True, parser=None):
+    """Run rolling AutoRegressive model evaluation.
+    
+    Args:
+        dataset: Name of dataset
+        target: Target column name
+        p: Number of lags
+        prop_test: Proportion of data to use for testing
+        verbose: Whether to print results
+        parser: Optional CSV parser settings
+        
+    Returns:
+        Dictionary containing test data, predictions, and metrics
+    """
     df = load_dataset(dataset, parser)
     ts = df[target]
     train = ts[:int(len(ts) * (1 - prop_test))]
@@ -107,14 +151,27 @@ def get_results_AR_rolling(dataset, target, p, prop_test=0.1, verbose=True, pars
         'r2': r2_AR
     }
 
-def find_best_model_rolling(dataset, target, p_candidates, prop_test=0.1, parser=None):
+def find_best_model_rolling(dataset, target, p_candidates, prop_test=0.1, parser=None, hyperparameters={}):
+    """Find best model parameters using rolling window approach.
+    
+    Args:
+        dataset: Name of dataset
+        target: Target column name
+        p_candidates: List of lag values to try
+        prop_test: Proportion of data to use for testing
+        parser: Optional CSV parser settings
+        hyperparameters: XGBoost hyperparameters
+        
+    Returns:
+        Dictionary containing results for best XGB and AR models
+    """
     results = {
         'XGB': {'best_p': None, 'best_mse': np.inf, 'metrics': {}},
         'AR': {'best_p': None, 'best_mse': np.inf, 'metrics': {}}
     }
     for p in p_candidates:
         try:
-            xgb_results = get_results_xgb_rolling(dataset, target, p, prop_test, verbose=False, parser=parser)
+            xgb_results = get_results_xgb_rolling(dataset, target, p, prop_test, verbose=False, parser=parser, hyperparameters=hyperparameters)
             results['XGB']['metrics'][p] = xgb_results
             if xgb_results['mse'] < results['XGB']['best_mse']:
                 results['XGB']['best_mse'] = xgb_results['mse']
@@ -157,15 +214,28 @@ def find_best_model_rolling(dataset, target, p_candidates, prop_test=0.1, parser
     return results
 
 
-def get_results_xgb_uptodate(dataset, target, p, prop_test=0.1, verbose=True, parser=None):
-    """XGBoost predictions using true y values (up-to-date approach)"""
+def get_results_xgb_uptodate(dataset, target, p, prop_test=0.1, verbose=True, parser=None, hyperparameters={}):
+    """Run XGBoost predictions using true y values (up-to-date approach).
+    
+    Args:
+        dataset: Name of dataset
+        target: Target column name
+        p: Number of lag features
+        prop_test: Proportion of data to use for testing
+        verbose: Whether to print results
+        parser: Optional CSV parser settings
+        hyperparameters: XGBoost hyperparameters
+        
+    Returns:
+        Dictionary containing test data, predictions, and metrics
+    """
     df = load_dataset(dataset, parser)
     ts = df[target]
     train_size = int(len(ts) * (1 - prop_test))
     train = ts[:train_size]
     test = ts[train_size:]
     
-    xgb_md = xgb_model(p=p)
+    xgb_md = xgb_model(p=p, hyperparams=hyperparameters)
     xgb_md.train_model(train=train)
     test_hat = xgb_md.predict(full_series=ts, train_size=train_size)
     mse_xgb, mae_xgb, rmse_xgb, r2_xgb = calculate_metrics(test=test, preds=test_hat)
@@ -188,7 +258,19 @@ def get_results_xgb_uptodate(dataset, target, p, prop_test=0.1, verbose=True, pa
 
 
 def get_results_AR_uptodate(dataset, target, p, prop_test=0.1, verbose=True, parser=None):
-    """AR predictions using true y values (up-to-date approach)"""
+    """Run AR predictions using true y values (up-to-date approach).
+    
+    Args:
+        dataset: Name of dataset
+        target: Target column name
+        p: Number of lags
+        prop_test: Proportion of data to use for testing
+        verbose: Whether to print results
+        parser: Optional CSV parser settings
+        
+    Returns:
+        Dictionary containing test data, predictions, and metrics
+    """
     df = load_dataset(dataset, parser)
     ts = df[target].values
     train_size = int(len(ts) * (1 - prop_test))
@@ -217,8 +299,20 @@ def get_results_AR_uptodate(dataset, target, p, prop_test=0.1, verbose=True, par
     }
 
 
-def find_best_model_uptodate(dataset, target, p_candidates, prop_test=0.1, parser=None):
-    """Find best model using up-to-date approach"""
+def find_best_model_uptodate(dataset, target, p_candidates, prop_test=0.1, parser=None, hyperparameters={}):
+    """Find best model parameters using up-to-date approach.
+    
+    Args:
+        dataset: Name of dataset
+        target: Target column name
+        p_candidates: List of lag values to try
+        prop_test: Proportion of data to use for testing
+        parser: Optional CSV parser settings
+        hyperparameters: XGBoost hyperparameters
+        
+    Returns:
+        Dictionary containing results for best XGB and AR models
+    """
     results = {
         'XGB': {'best_p': None, 'best_mse': np.inf, 'metrics': {}},
         'AR': {'best_p': None, 'best_mse': np.inf, 'metrics': {}}
@@ -269,7 +363,12 @@ def find_best_model_uptodate(dataset, target, p_candidates, prop_test=0.1, parse
 
 
 def plot_best_uptodate(results, dataset_name='Dataset'):
-    """Plots the forecast for the best XGB and AR models (up-to-date approach)"""
+    """Plots the forecast for the best XGB and AR models (up-to-date approach).
+    
+    Args:
+        results: Dictionary of results from find_best_model_uptodate
+        dataset_name: Name of the dataset for the plot title
+    """
     plt.close()
     test = results['XGB']['metrics'][results['XGB']['best_p']]['test']
     preds_xgb = results['XGB']['metrics'][results['XGB']['best_p']]['predictions']

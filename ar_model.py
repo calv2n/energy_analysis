@@ -11,10 +11,14 @@ class ar_model:
         self.trained = True
     
     def forecast(self, train, n_forecast):
-        """
-        Rolling predictions: similar to how forecast works 
-        in autoregressive model. Uses only training data and
-        yhats.
+        """Generate rolling predictions using only training data and previous predictions.
+        
+        Args:
+            train: Training data
+            n_forecast: Number of steps to forecast
+            
+        Returns:
+            Array of predicted values
         """
         if not self.trained:
             raise Exception("Must train model to get forecast")
@@ -26,9 +30,14 @@ class ar_model:
         return preds
     
     def predict(self, full_series, train_size):
-        """
-        Up-to-date approach: uses true y values before y_t 
-        instead of rolling predictions.
+        """Generate predictions using true values (up-to-date approach).
+        
+        Args:
+            full_series: Complete time series data
+            train_size: Size of training set (start index for predictions)
+            
+        Returns:
+            Array of predicted values
         """
         if not self.trained:
             raise Exception("Must train model first")
